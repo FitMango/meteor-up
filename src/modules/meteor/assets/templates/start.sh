@@ -14,7 +14,7 @@ docker rm -f $APPNAME-frontend
 
 # We don't need to fail the deployment because of a docker hub downtime
 set +e
-docker pull <%= image %>
+docker pull <%= docker.image %>
 set -e
 
 docker run \
@@ -27,13 +27,15 @@ docker run \
   <% if(useLocalMongo)  { %>--link=mongodb:mongodb --env=MONGO_URL=mongodb://mongodb:27017/$APPNAME <% } %>\
   <% if(logConfig && logConfig.driver)  { %>--log-driver=<%= logConfig.driver %> <% } %>\
   <% for(var option in logConfig.opts) { %>--log-opt <%= option %>=<%= logConfig.opts[option] %> <% } %>\
+  <% for(var volume in volumes) { %>-v <%= volume %>:<%= volumes[volume] %> <% } %>\
+  <% for(var args in docker.args) { %> <%= docker.args[args] %> <% } %>\
   --name=$APPNAME \
-  <%= image %>
+  <%= docker.image %>
 
 <% if(typeof sslConfig === "object")  { %>
   # We don't need to fail the deployment because of a docker hub downtime
   set +e
-  docker pull meteorhacks/mup-frontend-server:latest
+  docker pull <%= docker.imageFrontendServer %>
   set -e
   docker run \
     -d \
@@ -43,5 +45,5 @@ docker run \
     --link=$APPNAME:backend \
     --publish=<%= sslConfig.port %>:443 \
     --name=$APPNAME-frontend \
-    meteorhacks/mup-frontend-server /start.sh
+    <%= docker.imageFrontendServer %> /start.sh
 <% } %>
